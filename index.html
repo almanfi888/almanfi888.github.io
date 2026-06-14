@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>番茄学习助手 | 纯本地音频</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background: #f5f7fa;
+            padding: 30px 20px;
+            transition: background 0.3s, color 0.2s;
+        }
+
+        body.dark {
+            background: #1a1a1a;
+            color: #fff;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: #fff;
+            border-radius: 32px;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: background 0.3s;
+        }
+
+        body.dark .container {
+            background: #2a2a2a;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4e6ef2, #3b52c9);
+            color: white;
+            padding: 28px 20px 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 600;
+            letter-spacing: -0.3px;
+            margin-bottom: 18px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .tab {
+            padding: 8px 20px;
+            border-radius: 40px;
+            border: none;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #4e6ef2;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .content {
+            padding: 28px 24px 32px;
+        }
+
+        .page {
+            display: none;
+            animation: fade 0.2s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fade {
+            from { opacity: 0; transform: translateY(5px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        .mode-switch {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 10px 0;
+            border-radius: 48px;
+            border: 1.5px solid #4e6ef2;
+            background: white;
+            color: #4e6ef2;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .mode-btn.active-mode {
+            background: #4e6ef2;
+            color: white;
+            box-shadow: 0 4px 10px rgba(78,110,242,0.3);
+        }
+        body.dark .mode-btn {
+            background: #2a2a2a;
+            color: #8ba0ff;
+            border-color: #5e7eff;
+        }
+        body.dark .mode-btn.active-mode {
+            background: #4e6ef2;
+            color: white;
+        }
+        .mode-badge {
+            text-align: center;
+            font-size: 12px;
+            margin-top: 5px;
+            margin-bottom: 8px;
+            padding: 4px 10px;
+            border-radius: 30px;
+            display: inline-block;
+            width: auto;
+            background: #eef2ff;
+            color: #4e6ef2;
+        }
+        body.dark .mode-badge {
+            background: #3a405e;
+            color: #bbd0ff;
+        }
+
+        .circle-wrapper {
+            position: relative;
+            width: 220px;
+            height: 220px;
+            margin: 10px auto 15px;
+        }
+
+        .circle-svg {
+            transform: rotate(-90deg);
+        }
+
+        .bg-circle {
+            fill: none;
+            stroke: #e9ecef;
+            stroke-width: 12;
+        }
+
+        body.dark .bg-circle {
+            stroke: #3a3a3a;
+        }
+
+        .progress-circle {
+            fill: none;
+            stroke: #4e6ef2;
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.2s linear;
+        }
+
+        .time-inside {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 34px;
+            font-weight: 700;
+            color: #2c3e66;
+        }
+
+        body.dark .time-inside {
+            color: #e0e0e0;
+        }
+
+        .timer-controls {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin: 20px 0 20px;
+        }
+
+        .timer-controls button {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 48px;
+            background: #4e6ef2;
+            color: white;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .timer-controls button:active {
+            transform: scale(0.96);
+        }
+
+        .timer-controls button:disabled {
+            background: #bdc4e0;
+            cursor: not-allowed;
+            transform: none;
+            opacity: 0.6;
+        }
+
+        .stop-alarm-btn {
+            background: #ff6b6b;
+            margin-top: 5px;
+            padding: 8px 16px;
+            border-radius: 40px;
+            border: none;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 13px;
+        }
+        .stop-alarm-btn:hover {
+            background: #e55a5a;
+            transform: scale(0.97);
+        }
+
+        .today-tomato {
+            text-align: center;
+            font-size: 15px;
+            background: #f0f3fe;
+            padding: 12px;
+            border-radius: 60px;
+            margin-top: 10px;
+            color: #4e6ef2;
+            font-weight: 500;
+        }
+
+        body.dark .today-tomato {
+            background: #3a3f5e;
+            color: #bdd0ff;
+        }
+
+        .todo-input {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        #taskInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #ddd;
+            border-radius: 28px;
+            font-size: 15px;
+            background: white;
+            transition: 0.2s;
+        }
+
+        #taskInput:focus {
+            outline: none;
+            border-color: #4e6ef2;
+            box-shadow: 0 0 0 3px rgba(78,110,242,0.2);
+        }
+
+        body.dark #taskInput {
+            background: #3a3a3a;
+            border-color: #555;
+            color: white;
+        }
+
+        #addTask {
+            padding: 0 20px;
+            background: #4e6ef2;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .task-list {
+            list-style: none;
+            max-height: 380px;
+            overflow-y: auto;
+        }
+
+        .task-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #f8f9fc;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            transition: 0.1s;
+        }
+
+        body.dark .task-item {
+            background: #363636;
+        }
+
+        .task-item.done .task-text {
+            text-decoration: line-through;
+            color: #999;
+        }
+
+        .task-text {
+            flex: 1;
+            font-size: 15px;
+        }
+
+        .task-item button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 14px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .empty-tip {
+            text-align: center;
+            color: #aaa;
+            padding: 36px 20px;
+            font-size: 14px;
+        }
+
+        .stat-card {
+            background: #f8f9fc;
+            padding: 22px 16px;
+            border-radius: 28px;
+            text-align: center;
+            margin-bottom: 18px;
+            transition: 0.2s;
+        }
+
+        body.dark .stat-card {
+            background: #363636;
+        }
+
+        .stat-card p {
+            color: #5e6f8d;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        body.dark .stat-card p {
+            color: #bbb;
+        }
+
+        .stat-card h3 {
+            font-size: 36px;
+            color: #4e6ef2;
+            font-weight: 700;
+        }
+
+        .info-tip {
+            font-size: 12px;
+            text-align: center;
+            margin-top: 12px;
+            color: #8f9bb3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>🍅 番茄学习助手</h1>
+        <div class="tabs">
+            <button class="tab active">🍅 番茄钟</button>
+            <button class="tab">📋 待办清单</button>
+            <button class="tab">📊 统计看板</button>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="page active" id="pomodoro">
+            <div class="mode-switch">
+                <button id="formal-mode-btn" class="mode-btn active-mode">🍅 正式模式 (25+5)</button>
+                <button id="test-mode-btn" class="mode-btn">🧪 测试模式 (3+3)</button>
+            </div>
+            <div style="text-align: center;">
+                <span id="mode-indicator" class="mode-badge">📌 正式模式: 专注25分钟 / 休息5分钟</span>
+            </div>
+            <div class="circle-wrapper">
+                <svg class="circle-svg" width="220" height="220" viewBox="0 0 220 220">
+                    <circle class="bg-circle" cx="110" cy="110" r="90"></circle>
+                    <circle class="progress-circle" cx="110" cy="110" r="90" id="progress"></circle>
+                </svg>
+                <div class="time-inside" id="time">25:00</div>
+            </div>
+            <div class="timer-controls">
+                <button id="start-btn">▶ 开始</button>
+                <button id="pause-btn" disabled>⏸ 暂停</button>
+                <button id="reset-btn" disabled>🔄 重置</button>
+            </div>
+            <div style="display: flex; justify-content: center; margin: 8px 0;">
+                <button id="stop-alarm-btn" class="stop-alarm-btn">🔇 关闭循环提示音</button>
+            </div>
+            <div class="today-tomato">
+                🍅 今日已完成番茄：<span id="today-count">0</span>
+            </div>
+            <div class="info-tip" id="mode-tip">
+                💡 正式模式适合深度学习，结束会循环播放提示音（纯本地蜂鸣声），点击上方按钮关闭
+            </div>
+        </div>
+
+        <div class="page" id="todo">
+            <h2 style="margin-bottom: 18px;">✅ 待办清单</h2>
+            <div class="todo-input">
+                <input type="text" id="taskInput" placeholder="例如：复习数学、写代码...">
+                <button id="addTask">➕ 添加</button>
+            </div>
+            <ul id="taskList" class="task-list"></ul>
+        </div>
+
+        <div class="page" id="stats">
+            <h2 style="margin-bottom: 18px;">📈 学习统计</h2>
+            <div class="stat-card">
+                <p>🍅 今日完成番茄数</p>
+                <h3 id="statTomato">0</h3>
+            </div>
+            <div class="stat-card">
+                <p>📌 任务完成情况</p>
+                <h3 id="statTask">0 / 0</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ========================= 1. 纯本地音频系统（完全不依赖网络）=========================
+    let alarmInterval = null;
+    let isAlarmLooping = false;
+    let audioContext = null;
+    
+    // 初始化 AudioContext
+    function initAudioContext() {
+        if (audioContext) return audioContext;
+        try {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            return audioContext;
+        } catch(e) {
+            console.warn("Web Audio API 不支持");
+            return null;
+        }
+    }
+    
+    // 播放单次本地蜂鸣声（多重音色叠加）
+    function playLocalBeep() {
+        let ctx = audioContext;
+        if (!ctx) {
+            ctx = initAudioContext();
+        }
+        if (!ctx) return;
+        
+        // 恢复上下文（如果需要）
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(() => {
+                actuallyPlayBeep(ctx);
+            }).catch(() => {});
+        } else {
+            actuallyPlayBeep(ctx);
+        }
+    }
+    
+    function actuallyPlayBeep(ctx) {
+        try {
+            const now = ctx.currentTime;
+            
+            // 主蜂鸣：880Hz
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.value = 880;
+            gain1.gain.value = 0.4;
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start();
+            gain1.gain.exponentialRampToValueAtTime(0.00001, now + 0.5);
+            osc1.stop(now + 0.5);
+            
+            // 低音：440Hz
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.value = 440;
+            gain2.gain.value = 0.35;
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start();
+            gain2.gain.exponentialRampToValueAtTime(0.00001, now + 0.55);
+            osc2.stop(now + 0.55);
+            
+            // 方波：660Hz（更刺耳）
+            const osc3 = ctx.createOscillator();
+            const gain3 = ctx.createGain();
+            osc3.type = 'square';
+            osc3.frequency.value = 660;
+            gain3.gain.value = 0.25;
+            osc3.connect(gain3);
+            gain3.connect(ctx.destination);
+            osc3.start();
+            gain3.gain.exponentialRampToValueAtTime(0.00001, now + 0.4);
+            osc3.stop(now + 0.4);
+            
+        } catch(e) {
+            console.warn("蜂鸣播放失败", e);
+        }
+    }
+    
+    // 简单备用蜂鸣
+    function playSimpleBeep() {
+        let ctx = audioContext;
+        if (!ctx) {
+            ctx = initAudioContext();
+        }
+        if (!ctx) return;
+        
+        if (ctx.state === 'suspended') {
+            ctx.resume().then(() => {
+                simpleBeep(ctx);
+            }).catch(() => {});
+        } else {
+            simpleBeep(ctx);
+        }
+    }
+    
+    function simpleBeep(ctx) {
+        try {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = 800;
+            gain.gain.value = 0.5;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.6);
+            osc.stop(ctx.currentTime + 0.6);
+        } catch(e) {}
+    }
+    
+    function playSingleAlarmSound() {
+        playLocalBeep();
+        setTimeout(() => {
+            playSimpleBeep();
+        }, 100);
+    }
+    
+    function startLoopAlarm() {
+        if (isAlarmLooping) return;
+        stopLoopAlarm();
+        isAlarmLooping = true;
+        
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume().catch(() => {});
+        }
+        
+        playSingleAlarmSound();
+        alarmInterval = setInterval(() => {
+            if (isAlarmLooping) {
+                playSingleAlarmSound();
+            }
+        }, 1000);
+    }
+    
+    function stopLoopAlarm() {
+        if (alarmInterval) {
+            clearInterval(alarmInterval);
+            alarmInterval = null;
+        }
+        isAlarmLooping = false;
+    }
+    
+    // ========================= 2. 双模式配置 =========================
+    let currentMode = "formal";
+    
+    let formalWork = 25 * 60;
+    let formalBreak = 5 * 60;
+    let testWork = 3;
+    let testBreak = 3;
+    
+    let workTime = formalWork;
+    let breakTime = formalBreak;
+    
+    let remainingSeconds = workTime;
+    let isRunning = false;
+    let isWorkMode = true;
+    let countdownTimer = null;
+    
+    // DOM 元素
+    const timeDisplay = document.getElementById('time');
+    const startBtn = document.getElementById('start-btn');
+    const pauseBtn = document.getElementById('pause-btn');
+    const resetBtn = document.getElementById('reset-btn');
+    const stopAlarmBtn = document.getElementById('stop-alarm-btn');
+    const todayCountEl = document.getElementById('today-count');
+    const progressCircle = document.getElementById('progress');
+    const modeIndicator = document.getElementById('mode-indicator');
+    const modeTip = document.getElementById('mode-tip');
+    const formalBtn = document.getElementById('formal-mode-btn');
+    const testBtn = document.getElementById('test-mode-btn');
+    
+    const radius = 90;
+    const circumference = 2 * Math.PI * radius;
+    progressCircle.style.strokeDasharray = `${circumference}`;
+    progressCircle.style.strokeDashoffset = circumference;
+    
+    // 激活音频的函数（在用户交互时调用）
+    function activateAudioOnInteraction() {
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume().catch(() => {});
+        }
+    }
+    
+    // 绑定音频激活到所有相关按钮
+    function bindAudioActivation() {
+        const buttons = [startBtn, pauseBtn, resetBtn, formalBtn, testBtn, stopAlarmBtn];
+        buttons.forEach(btn => {
+            if (btn) {
+                btn.addEventListener('click', activateAudioOnInteraction);
+            }
+        });
+    }
+    
+    function applyMode(mode) {
+        currentMode = mode;
+        if (mode === "formal") {
+            workTime = formalWork;
+            breakTime = formalBreak;
+            modeIndicator.innerText = "📌 正式模式: 专注25分钟 / 休息5分钟";
+            modeTip.innerText = "🍅 正式模式适合深度学习，结束会循环播放提示音（纯本地蜂鸣），点击「关闭循环提示音」按钮停止";
+            formalBtn.classList.add("active-mode");
+            testBtn.classList.remove("active-mode");
+        } else {
+            workTime = testWork;
+            breakTime = testBreak;
+            modeIndicator.innerText = "🧪 测试模式: 专注3秒 / 休息3秒 (快速体验)";
+            modeTip.innerText = "⚡ 测试模式仅用于体验番茄钟流程，结束后循环提示音（本地蜂鸣），记得手动关闭";
+            testBtn.classList.add("active-mode");
+            formalBtn.classList.remove("active-mode");
+        }
+        resetTimerLogic();
+    }
+    
+    function resetTimerLogic() {
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+        }
+        isRunning = false;
+        isWorkMode = true;
+        remainingSeconds = workTime;
+        updateTimeDisplay();
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        resetBtn.disabled = true;
+        stopLoopAlarm();
+        progressCircle.style.stroke = '#4e6ef2';
+    }
+    
+    function updateProgressRing() {
+        const total = isWorkMode ? workTime : breakTime;
+        let percent = remainingSeconds / total;
+        if (percent < 0) percent = 0;
+        const offset = circumference * (1 - percent);
+        progressCircle.style.strokeDashoffset = offset;
+        progressCircle.style.stroke = isWorkMode ? '#4e6ef2' : '#20c997';
+    }
+    
+    function updateTimeDisplay() {
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        timeDisplay.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        updateProgressRing();
+        const modeText = isWorkMode ? '🍅专注' : '☕休息';
+        document.title = `${modeText} ${timeDisplay.textContent} | 番茄钟`;
+    }
+    
+    function handleTimerEnd() {
+        if (countdownTimer) {
+            clearInterval(countdownTimer);
+            countdownTimer = null;
+        }
+        isRunning = false;
+        
+        // 时间归零：开始循环播放本地蜂鸣提示音
+        startLoopAlarm();
+        
+        if (isWorkMode) {
+            let currentTomato = parseInt(localStorage.getItem('todayTomato')) || 0;
+            if (localStorage.getItem('lastDate') !== getTodayKey()) {
+                localStorage.setItem('lastDate', getTodayKey());
+                currentTomato = 0;
+            }
+            currentTomato++;
+            localStorage.setItem('todayTomato', currentTomato);
+            todayCountEl.textContent = currentTomato;
+            isWorkMode = false;
+            remainingSeconds = breakTime;
+        } else {
+            isWorkMode = true;
+            remainingSeconds = workTime;
+        }
+        
+        updateTimeDisplay();
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        resetBtn.disabled = true;
+        isRunning = false;
+    }
+    
+    function startTimer() {
+        activateAudioOnInteraction();
+        if (isRunning) return;
+        if (remainingSeconds <= 0) {
+            if (isWorkMode) remainingSeconds = workTime;
+            else remainingSeconds = breakTime;
+            updateTimeDisplay();
+        }
+        isRunning = true;
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        resetBtn.disabled = false;
+        
+        countdownTimer = setInterval(() => {
+            if (!isRunning) return;
+            if (remainingSeconds > 0) {
+                remainingSeconds--;
+                updateTimeDisplay();
+                if (remainingSeconds === 0) {
+                    if (countdownTimer) clearInterval(countdownTimer);
+                    countdownTimer = null;
+                    handleTimerEnd();
+                }
+            } else {
+                if (countdownTimer) clearInterval(countdownTimer);
+                countdownTimer = null;
+                handleTimerEnd();
+            }
+        }, 1000);
+    }
+    
+    function pauseTimer() {
+        if (!isRunning) return;
+        if (countdownTimer) clearInterval(countdownTimer);
+        countdownTimer = null;
+        isRunning = false;
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+    }
+    
+    function resetTimer() {
+        stopLoopAlarm();
+        if (countdownTimer) clearInterval(countdownTimer);
+        countdownTimer = null;
+        isRunning = false;
+        isWorkMode = true;
+        remainingSeconds = workTime;
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        resetBtn.disabled = true;
+        updateTimeDisplay();
+        progressCircle.style.stroke = '#4e6ef2';
+    }
+    
+    // 绑定事件
+    startBtn.addEventListener('click', startTimer);
+    pauseBtn.addEventListener('click', pauseTimer);
+    resetBtn.addEventListener('click', resetTimer);
+    
+    formalBtn.addEventListener('click', () => {
+        if (currentMode === "formal") return;
+        applyMode("formal");
+    });
+    
+    testBtn.addEventListener('click', () => {
+        if (currentMode === "test") return;
+        applyMode("test");
+    });
+    
+    stopAlarmBtn.addEventListener('click', () => {
+        stopLoopAlarm();
+    });
+    
+    // 绑定音频激活
+    bindAudioActivation();
+    
+    function getTodayKey() {
+        const now = new Date();
+        return `${now.getFullYear()}-${now.getMonth()+1}-${now.getDate()}`;
+    }
+    
+    // 初始化番茄数据
+    let todayTomato = 0;
+    const storedDate = localStorage.getItem('lastDate');
+    const currentDate = getTodayKey();
+    if (storedDate === currentDate) {
+        todayTomato = parseInt(localStorage.getItem('todayTomato')) || 0;
+    } else {
+        localStorage.setItem('lastDate', currentDate);
+        todayTomato = 0;
+        localStorage.setItem('todayTomato', 0);
+    }
+    todayCountEl.textContent = todayTomato;
+    
+    function syncTomatoDisplay() {
+        let val = parseInt(localStorage.getItem('todayTomato')) || 0;
+        if (localStorage.getItem('lastDate') !== getTodayKey()) val = 0;
+        todayCountEl.textContent = val;
+        if (document.querySelector('#stats.page.active')) updateStats();
+    }
+    
+    // 待办清单模块
+    const taskInput = document.getElementById('taskInput');
+    const addTaskBtn = document.getElementById('addTask');
+    const taskListEl = document.getElementById('taskList');
+    let tasks = [];
+    try {
+        const stored = localStorage.getItem('tasks');
+        if (stored) tasks = JSON.parse(stored);
+        if (!Array.isArray(tasks)) tasks = [];
+    } catch(e) { tasks = []; }
+    
+    function renderTasks() {
+        if (!taskListEl) return;
+        taskListEl.innerHTML = '';
+        if (tasks.length === 0) {
+            taskListEl.innerHTML = '<li class="empty-tip">✨ 暂无待办，添加任务吧</li>';
+            return;
+        }
+        tasks.forEach((task, idx) => {
+            const li = document.createElement('li');
+            li.className = `task-item ${task.done ? 'done' : ''}`;
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = task.done;
+            checkbox.addEventListener('change', (e) => {
+                tasks[idx].done = e.target.checked;
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                renderTasks();
+                updateStatsIfVisible();
+            });
+            const span = document.createElement('span');
+            span.className = 'task-text';
+            span.textContent = task.text;
+            const delBtn = document.createElement('button');
+            delBtn.textContent = '删除';
+            delBtn.addEventListener('click', () => {
+                tasks.splice(idx, 1);
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                renderTasks();
+                updateStatsIfVisible();
+            });
+            li.appendChild(checkbox);
+            li.appendChild(span);
+            li.appendChild(delBtn);
+            taskListEl.appendChild(li);
+        });
+    }
+    
+    function addTask() {
+        const text = taskInput.value.trim();
+        if (text === '') return;
+        tasks.push({ text: text, done: false });
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        taskInput.value = '';
+        renderTasks();
+        updateStatsIfVisible();
+    }
+    
+    addTaskBtn.addEventListener('click', addTask);
+    taskInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') addTask();
+    });
+    
+    function updateStats() {
+        const doneCount = tasks.filter(t => t.done).length;
+        const totalCount = tasks.length;
+        const percent = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
+        const statTomatoSpan = document.getElementById('statTomato');
+        const statTaskSpan = document.getElementById('statTask');
+        let currentTomatoes = parseInt(localStorage.getItem('todayTomato')) || 0;
+        if (localStorage.getItem('lastDate') !== getTodayKey()) currentTomatoes = 0;
+        if (statTomatoSpan) statTomatoSpan.textContent = currentTomatoes;
+        if (statTaskSpan) statTaskSpan.textContent = `${doneCount}/${totalCount} (${percent}%)`;
+    }
+    
+    function updateStatsIfVisible() {
+        const activePage = document.querySelector('.page.active');
+        if (activePage && activePage.id === 'stats') {
+            updateStats();
+        }
+    }
+    
+    // 标签页切换
+    const tabs = document.querySelectorAll('.tab');
+    const pages = document.querySelectorAll('.page');
+    tabs.forEach((tab, idx) => {
+        tab.addEventListener('click', () => {
+            tabs.forEach(t => t.classList.remove('active'));
+            pages.forEach(p => p.classList.remove('active'));
+            tab.classList.add('active');
+            pages[idx].classList.add('active');
+            if (pages[idx].id === 'stats') updateStats();
+            if (pages[idx].id === 'pomodoro') updateTimeDisplay();
+        });
+    });
+    
+    // 初始化
+    applyMode("formal");
+    renderTasks();
+    updateStats();
+    initAudioContext();
+    
+    setInterval(() => {
+        if (document.querySelector('#stats.page.active')) updateStats();
+        syncTomatoDisplay();
+    }, 800);
+</script>
+</body>
+</html>
